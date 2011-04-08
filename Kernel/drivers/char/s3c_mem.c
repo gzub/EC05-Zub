@@ -27,6 +27,7 @@
 #include <linux/tty.h>
 #include <linux/io.h>
 #include <linux/sched.h>
+#include <linux/slab.h>
 #include <asm/irq.h>
 
 #include <linux/mman.h>

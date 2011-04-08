@@ -32,17 +32,21 @@ obj-$(CONFIG_S3C_ADC)	+= adc.o
 
 # devices
 
+obj-y				+= platformdata.o
+
 obj-$(CONFIG_S3C_DEV_HSMMC)	+= dev-hsmmc.o
 obj-$(CONFIG_S3C_DEV_HSMMC1)	+= dev-hsmmc1.o
 obj-$(CONFIG_S3C_DEV_HSMMC2)	+= dev-hsmmc2.o
 obj-$(CONFIG_S3C_DEV_HSMMC3)	+= dev-hsmmc3.o
+obj-$(CONFIG_S3C_DEV_HWMON)	+= dev-hwmon.o
 obj-y				+= dev-i2c0.o
 obj-$(CONFIG_S3C_DEV_I2C1)	+= dev-i2c1.o
-obj-$(CONFIG_S3C_DEV_I2C2)      += dev-i2c2.o
+obj-$(CONFIG_S3C_DEV_I2C2)	+= dev-i2c2.o
 obj-$(CONFIG_S3C_DEV_FB)	+= dev-fb.o
 obj-y				+= dev-uart.o
 obj-$(CONFIG_S3C_DEV_USB_HOST)	+= dev-usb.o
 obj-$(CONFIG_S3C_DEV_USB_HSOTG)	+= dev-usb-hsotg.o
+obj-$(CONFIG_S3C_DEV_WDT)	+= dev-wdt.o
 obj-$(CONFIG_S3C_DEV_NAND)	+= dev-nand.o
 obj-$(CONFIG_BLK_DEV_IDE_S3C)   += dev-ide.o
 obj-$(CONFIG_SPI_S5PV210)        += dev-spi.o
@@ -61,6 +65,8 @@ endif
 
 obj-$(CONFIG_PM)		+= pm-gpio.o
 obj-$(CONFIG_SAMSUNG_PM_CHECK)	+= pm-check.o
+
+obj-$(CONFIG_SAMSUNG_WAKEMASK)	+= wakeup-mask.o
 
 # PWM support
 

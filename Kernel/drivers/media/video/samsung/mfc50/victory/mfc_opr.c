@@ -95,7 +95,9 @@ static MFC_ERROR_CODE mfc_encode_header(mfc_inst_ctx *mfc_ctx, mfc_args *args);
 static MFC_ERROR_CODE mfc_decode_one_frame(mfc_inst_ctx *mfc_ctx, mfc_dec_exe_arg_t *dec_arg, unsigned int *consumed_strm_size);
 
 static void mfc_set_codec_buffer(mfc_inst_ctx *mfc_ctx);
+static void mfc_reset_codec_buffer(mfc_inst_ctx *mfc_ctx);
 static void mfc_set_dec_frame_buffer(mfc_inst_ctx *mfc_ctx);
+static void mfc_reset_dec_frame_buffer(mfc_inst_ctx *mfc_ctx);
 static void mfc_set_dec_stream_buffer(mfc_inst_ctx *mfc_ctx, int buf_addr, unsigned int buf_size);
 static void mfc_set_enc_ref_buffer(mfc_inst_ctx *mfc_ctx, mfc_args *args);
 
@@ -172,13 +174,13 @@ void mfc_cmd_reset(void)
 	WRITEL(0x3f7, MFC_SW_RESET); //  reset VI
 	WRITEL(0x3f6, MFC_SW_RESET); //  reset RISC
 	WRITEL(0x3e2, MFC_SW_RESET); //  All reset except for MC
-	mdelay(2);
+	mdelay(10);
 
 	/* Check MC status */
 	do {
 		mc_status = READL(MFC_MC_STATUS);
 	} while(mc_status & 0x3);
-	
+
 	WRITEL(0x0, MFC_SW_RESET);
 	WRITEL(0x3fe, MFC_SW_RESET);
 }
@@ -322,7 +324,18 @@ static MFC_ERROR_CODE mfc_alloc_dec_frame_buffer(mfc_inst_ctx *mfc_ctx, mfc_args
 	return MFCINST_RET_OK;
 }
 
+static void mfc_reset_dec_frame_buffer(mfc_inst_ctx *mfc_ctx)
+{
+	int i;
 
+	//for (i = 0; i < mfc_ctx->totalDPBCnt; i++)
+	for (i = 0; i < 16; i++)
+	{
+		WRITEL(0, MFC_H264DEC_LUMA + (4 * i));
+		WRITEL(0, MFC_H264DEC_MV + (4 * i));
+		WRITEL(0, MFC_H264DEC_CHROMA + (4 * i));
+	}
+}
 
 static void mfc_set_dec_frame_buffer(mfc_inst_ctx *mfc_ctx)
 {
@@ -407,7 +420,7 @@ static MFC_ERROR_CODE mfc_alloc_stream_ref_buffer(mfc_inst_ctx *mfc_ctx, mfc_arg
 
 	memset(&local_param, 0, sizeof(local_param));
 	local_param.mem_alloc.buff_size = init_arg->out_buf_size.strm_ref_y;
-	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; 
+	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr;
 
 	ret_code = mfc_allocate_buffer(mfc_ctx, &(local_param), 0);
 	if (ret_code < 0)
@@ -536,7 +549,29 @@ static MFC_ERROR_CODE mfc_alloc_codec_buffer(mfc_inst_ctx *mfc_ctx, mfc_args *ar
 	return MFCINST_RET_OK;
 }
 
-
+static void mfc_reset_codec_buffer(mfc_inst_ctx *mfc_ctx)
+{
+	WRITEL(0, MFC_H264DEC_VERT_NB_MV);
+	WRITEL(0, MFC_H264DEC_NB_IP);
+	WRITEL(0, MFC_NB_DCAC);
+	WRITEL(0, MFC_UPNB_MV);
+	WRITEL(0, MFC_SUB_ANCHOR_MV);
+	WRITEL(0, MFC_OVERLAP_TRANSFORM);
+	WRITEL(0, MFC_STX_PARSER);
+	WRITEL(0, MFC_NB_DCAC);
+	WRITEL(0, MFC_UPNB_MV);
+	WRITEL(0, MFC_SUB_ANCHOR_MV);
+	WRITEL(0, MFC_OVERLAP_TRANSFORM);
+	WRITEL(0, MFC_BITPLANE3);
+	WRITEL(0, MFC_BITPLANE2);
+	WRITEL(0, MFC_BITPLANE1);
+	WRITEL(0, MFC_UPPER_MV_ADDR);
+	WRITEL(0, MFC_DIRECT_COLZERO_FLAG_ADDR);
+	WRITEL(0, MFC_UPPER_INTRA_MD_ADDR);
+	WRITEL(0, MFC_NBOR_INFO_MPENC_ADDR);
+	WRITEL(0, MFC_UPPER_INTRA_PRED_ADDR);
+	WRITEL(0, MFC_ACDC_COEF_BASE_ADDR);
+}
 
 static void mfc_set_codec_buffer(mfc_inst_ctx *mfc_ctx)
 {
@@ -699,7 +734,7 @@ static void mfc_set_encode_init_param(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 
 	/* Set Rate Control */
 	if (enc_init_mpeg4_arg->in_RC_frm_enable)
-	{     
+	{
 		WRITEL(enc_init_mpeg4_arg->in_RC_framerate, MFC_RC_FRAME_RATE);
 		WRITEL(enc_init_mpeg4_arg->in_RC_bitrate, MFC_RC_BIT_RATE);
 		WRITEL(enc_init_mpeg4_arg->in_RC_rpara, MFC_RC_RPARA);
@@ -786,12 +821,10 @@ int mfc_load_firmware()
 	mfc_debug("mfc_load_firmware : MFC F/W Loading Start.................\n");
 
 	fw_virbuf = mfc_get_fw_buff_vaddr();
-	memset((void *)fw_virbuf,0, MFC_FW_MAX_SIZE);
-	dmac_clean_range(fw_virbuf, fw_virbuf + MFC_FW_MAX_SIZE);
 	memcpy((void *)fw_virbuf, mfc_fw_code, mfc_fw_code_len);
-	dmac_clean_range(fw_virbuf, fw_virbuf + mfc_fw_code_len);
-	mfc_debug("mfc_load_firmware : MFC F/W Loading Stop.................(fw_virbuf: 0x%08x)\n", fw_virbuf);
-	
+
+	mfc_debug("mfc_load_firmware--\n");
+
 	return 0;
 }
 
@@ -1817,27 +1850,15 @@ MFC_ERROR_CODE mfc_exe_decode(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 		(mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME) &&
 		(dec_arg->in_strm_size - consumed_strm_size > 4))
 	{
-			 
-        unsigned char *stream_vir;
-		int offset = 0;
-		
-		stream_vir = phys_to_virt(dec_arg->in_strm_buf);	
-		dmac_inv_range((void *)stream_vir, (void *)(stream_vir + dec_arg->in_strm_size));
+//dec_arg->in_strm_buf += consumed_strm_size;
+		dec_arg->in_strm_size -= consumed_strm_size;
 
-		offset = CheckMPEG4StartCode(stream_vir+consumed_strm_size , dec_arg->in_strm_size - consumed_strm_size);
-		if(offset > 4)
-		{
-			consumed_strm_size += offset;
-		}
-			dec_arg->in_strm_size -= consumed_strm_size;
-
-			mfc_ctx->shared_mem.set_frame_tag = dec_arg->in_frametag;
-			mfc_ctx->shared_mem.start_byte_num = consumed_strm_size;
-			mfc_write_shared_mem(mfc_ctx->shared_mem_vaddr, &(mfc_ctx->shared_mem));
-			ret_code = mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
-			if (ret_code != MFCINST_RET_OK)
-				return ret_code;
-
+		mfc_ctx->shared_mem.set_frame_tag = dec_arg->in_frametag;
+		mfc_ctx->shared_mem.start_byte_num = consumed_strm_size;
+		mfc_write_shared_mem(mfc_ctx->shared_mem_vaddr, &(mfc_ctx->shared_mem));
+		ret_code = mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
+		if (ret_code != MFCINST_RET_OK)
+			return ret_code;
 			mfc_read_shared_mem(mfc_ctx->shared_mem_vaddr, &(mfc_ctx->shared_mem));
 			dec_arg->out_frametag_top = mfc_ctx->shared_mem.get_frame_tag_top;
 			dec_arg->out_frametag_bottom = mfc_ctx->shared_mem.get_frame_tag_bot;
@@ -2168,12 +2189,6 @@ static MFC_ERROR_CODE mfc_alloc_context_buffer(mfc_inst_ctx *mfc_ctx, unsigned i
 	if (ret_code < 0)
 		return ret_code;
 
-       /*	Set mfc context to "0". */ 
-  	unsigned char *context_vir;	
-	context_vir = phys_to_virt(local_param.mem_alloc.out_paddr);	
-	memset(context_vir, 0x0, local_param.mem_alloc.buff_size );
-        dmac_clean_range(context_vir, context_vir + local_param.mem_alloc.buff_size);
-	
 	*context_addr = local_param.mem_alloc.out_paddr;
 
 	return ret_code;
@@ -2258,474 +2273,3 @@ BOOL is_dec_codec(SSBSIP_MFC_CODEC_TYPE codec_type)
 }
 
 
-
-
-
-/*
-*===========================================================================================================
-*							Debugging Functions	Definition	(by jwc 2010.4.24)
-*		tile_to_linear_4x2(..)
-*		calculate_seq_size(..)
-*		printk_mfc_init_info(..)
-*===========================================================================================================
-*/
-
-
-#if DEBUG_MAKE_RAW
-static void write_file(char *filename,  unsigned char *data, unsigned int nSize)
-{
-  struct file *file;
-  loff_t pos = 0;
-  int fd;
- 
-  dmac_inv_range(data, data + nSize);
- 
-  mm_segment_t old_fs = get_fs();
-  set_fs(KERNEL_DS);
-  fd = sys_open(filename, O_WRONLY|O_CREAT, 0644);
-  if (fd >= 0) {
-	sys_write(fd, data, nSize);
-    file = fget(fd);
-    if (file) {
-		vfs_write(file, data, nSize, &pos);
-      fput(file);
-    }
-    sys_close(fd);
-  }
-  else
-  {
-	  mfc_err("........Open fail : %d \n", fd);
-  }
-  set_fs(old_fs);
-  
-  dmac_clean_range(data, data + nSize);
-  
-}
-
-static int tile_4x2_read(int x_size, int y_size, int x_pos, int y_pos)
-{
-	int pixel_x_m1, pixel_y_m1;
-	int roundup_x, roundup_y;
-	int linear_addr0, linear_addr1, bank_addr ;
-	int x_addr;
-	int trans_addr;
-
-	pixel_x_m1 = x_size -1;
-	pixel_y_m1 = y_size -1;
-
-	roundup_x = ((pixel_x_m1 >> 7) + 1);
-	roundup_y = ((pixel_x_m1 >> 6) + 1);
-
-	x_addr = (x_pos >> 2);
-
-	if ((y_size <= y_pos+32) && ( y_pos < y_size) &&
-		(((pixel_y_m1 >> 5) & 0x1) == 0) && (((y_pos >> 5) & 0x1) == 0))
-	{
-		linear_addr0 = (((y_pos & 0x1f) <<4) | (x_addr & 0xf));
-		linear_addr1 = (((y_pos >> 6) & 0xff) * roundup_x + ((x_addr >> 6) & 0x3f));
-
-		if(((x_addr >> 5) & 0x1) == ((y_pos >> 5) & 0x1))
-			bank_addr = ((x_addr >> 4) & 0x1);
-		else
-			bank_addr = 0x2 | ((x_addr >> 4) & 0x1);
-	}
-	else
-	{
-		linear_addr0 = (((y_pos & 0x1f) << 4) | (x_addr & 0xf));
-		linear_addr1 = (((y_pos >> 6) & 0xff) * roundup_x + ((x_addr >> 5) & 0x7f));
-
-		if(((x_addr >> 5) & 0x1) == ((y_pos >> 5) & 0x1))
-			bank_addr = ((x_addr >> 4) & 0x1);
-		else
-			bank_addr = 0x2 | ((x_addr >> 4) & 0x1);
-	}
-
-	linear_addr0 = linear_addr0 << 2;
-	trans_addr = (linear_addr1 <<13) | (bank_addr << 11) | linear_addr0;
-
-	return trans_addr;
-}
-
-
-static void copy16(unsigned char *p_linear_addr, unsigned char *p_tiled_addr, int mm, int nn)
-{
-		p_linear_addr[mm] 			= p_tiled_addr[nn];
-		p_linear_addr[mm + 1] 		= p_tiled_addr[nn+ 1];
-		p_linear_addr[mm + 2] 		= p_tiled_addr[nn+ 2];
-		p_linear_addr[mm + 3]		= p_tiled_addr[nn+ 3];
-
-		p_linear_addr[mm + 4] 		= p_tiled_addr[nn+ 4];
-		p_linear_addr[mm + 5] 		= p_tiled_addr[nn+ 5];
-		p_linear_addr[mm + 6] 		= p_tiled_addr[nn+ 6];
-		p_linear_addr[mm + 7] 		= p_tiled_addr[nn+ 7];
-
-		p_linear_addr[mm + 8] 		= p_tiled_addr[nn+ 8];
-		p_linear_addr[mm + 9] 		= p_tiled_addr[nn+ 9];
-		p_linear_addr[mm + 10] 	= p_tiled_addr[nn+ 10];
-		p_linear_addr[mm + 11] 	= p_tiled_addr[nn+ 11];
-
-		p_linear_addr[mm + 12] 	= p_tiled_addr[nn+ 12];
-		p_linear_addr[mm + 13]	= p_tiled_addr[nn+ 13];
-		p_linear_addr[mm + 14] 	= p_tiled_addr[nn+ 14];
-		p_linear_addr[mm + 15]	= p_tiled_addr[nn+ 15];
-}
-
-
-static void tile_to_linear_4x2(unsigned char *p_linear_addr, unsigned char *p_tiled_addr, unsigned int x_size, unsigned int y_size)
-{
-	int trans_addr;
-	unsigned int i, j, k, nn, mm, index;
-	
-	// .. TILE 4x2 test
-	for (i = 0; i < y_size; i = i + 16)
-	{
-		for (j = 0; j < x_size; j = j + 16)
-		{
-			trans_addr = tile_4x2_read(x_size, y_size, j, i);			
-			index = i*x_size + j;
-			
-			k = 0;		nn = trans_addr + (k << 6);		mm = index;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 1;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-			
-			k = 2;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 3;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 4;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 5;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-			
-			k = 6;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 7;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 8;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 9;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-			
-			k = 10;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 11;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 12;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 13;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-			
-			k = 14;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-
-			k = 15;		nn = trans_addr + (k << 6);		mm += x_size;
-			copy16(p_linear_addr, p_tiled_addr, mm, nn);
-						
-		}
-	}
-}
-#endif
-
-
-
-#if	ENABLE_CHECK_SEQ_HEADER
-static int calculate_seq_size(mfc_args *args)
-{
-	int	nn = 0;
-	int 	nCnt = 0;
-	unsigned char nSum = 0;
-	unsigned char *stream_vir;	
-
-	stream_vir = phys_to_virt(args->dec_init.in_strm_buf);	
-	if(args->dec_init.in_strm_size > 31)
-	{
-		for(nn=0; nn<args->dec_init.in_strm_size - 4; nn++)
-		{
-			nSum = (unsigned char)(((*(stream_vir+nn))<<1) + ((*(stream_vir+nn+1))<<1) + ((*(stream_vir+nn+2))<<1) + (*(stream_vir+nn+3)));
-			if(nSum == 0x1)
-			{
-				nCnt++;
-			}
-			
-			if(nCnt == 3)
-			{
-				mfc_info("-------------- After Stream Size : %d ,	nCnt = %d\n",args->dec_init.in_strm_size, nCnt);
-				return nn;
-			}			
-		}
-	}	
-	
-	return	args->dec_init.in_strm_size;
-}
-#endif
-
-
-//========================================================
-#if	ENABLE_DEBUG_MFC_INIT
-void printk_mfc_init_info(mfc_inst_ctx *mfc_ctx, mfc_args *args)
-{
-	int			nn = 0;
-	unsigned char *stream_vir;
-	
-	mfc_info("------------------------------------------------------------------ MFC Decoder/Encoder Init Information -------------------------------------------------------------------\n");
-	mfc_info("[InstNo : %d],  [DPBCnt : %d],  [totalDPBCnt : %d],  [extraDPB : %d],  [displayDelay : %d],  \n",
-				mfc_ctx->InstNo, mfc_ctx->DPBCnt, mfc_ctx->totalDPBCnt, mfc_ctx->extraDPB, mfc_ctx->displayDelay);
-	mfc_info("[img_width : %d],  [img_height : %d], [MfcCodecType : %d], [MfcState : %d] \n",
-				mfc_ctx->img_width, mfc_ctx->img_height, mfc_ctx->MfcCodecType, mfc_ctx->MfcState);
-
-	mfc_info("------------------------------------------------------------------ Input Stream Buffer Information -------------------------------------------------------------------\n");
-	mfc_info("[in_strm_size : %d],  [in_strm_buf : %d] \n",
-				args->dec_init.in_strm_size, args->dec_init.in_strm_buf);
-	
-	stream_vir = phys_to_virt(args->dec_init.in_strm_buf);	
-	if(args->dec_init.in_strm_size > 0)
-	{
-		mfc_info("------------------------------------------------------------------ Input Stream Buffer -------------------------------------------------------------------\n");
-		for(nn=0; nn<40; nn++)
-		{
-			printk("%02x ", *(stream_vir+nn));
-		}
-		printk("\n");
-	}
-				
-}
-#endif
-
-
-
-//========================================================
-#ifdef 	ENABLE_DEBUG_DEC_EXE_INTR_ERR
-#if	ENABLE_DEBUG_DEC_EXE_INTR_ERR
-void printk_mfc_dec_exe_info(mfc_inst_ctx *mfc_ctx, mfc_dec_exe_arg_t *dec_arg)
-{
-	int			nn = 0;
-	unsigned char *stream_vir;
-	
-	mfc_info("------------------------------------------------------------------ MFC Decoder/Encoder Exe Information -------------------------------------------------------------------\n");
-	mfc_info("[InstNo : %d],  [DPBCnt : %d],  [totalDPBCnt : %d],  [extraDPB : %d],  [displayDelay : %d],  \n",
-				mfc_ctx->InstNo, mfc_ctx->DPBCnt, mfc_ctx->totalDPBCnt, mfc_ctx->extraDPB, mfc_ctx->displayDelay);
-	mfc_info("[img_width : %d],  [img_height : %d], [MfcCodecType : %d], [MfcState : %d], [FrameType: %d] \n",
-				mfc_ctx->img_width, mfc_ctx->img_height, mfc_ctx->MfcCodecType, mfc_ctx->MfcState, mfc_ctx->FrameType);
-
-	mfc_info("------------------------------------------------------------------ Input Stream Buffer Information -------------------------------------------------------------------\n");
-	mfc_info("[in_strm_size : %d],  [in_strm_buf : %d] \n",
-				dec_arg->in_strm_size, dec_arg->in_strm_buf);
-	
-	stream_vir = phys_to_virt(dec_arg->in_strm_buf);	
-	if(dec_arg->in_strm_size > 0)
-	{
-		mfc_info("------------------------------------------------------------------ Input Stream Buffer -------------------------------------------------------------------\n");
-		for(nn=0; nn<50; nn++)
-		{
-			printk("%02x ", *(stream_vir+nn));
-		}
-		printk("\n");
-	}				
-}
-
-void makefile_mfc_dec_err_info(mfc_inst_ctx *mfc_ctx, mfc_dec_exe_arg_t *dec_arg, int 	nReturnErrCode)
-{
-		char fileName0[50];
-		char fileName1[50];
-		char fileName2[50];
-		unsigned char *fw_virbuf;
-		unsigned char *ctx_virbuf;
-		unsigned char *mfc_dec_in_base_vaddr;
-		
-		mframe_cnt++;
-
-		if((nReturnErrCode < 145) || (nReturnErrCode == 300))
-		{
-			mIsDangerError = 1;
-			printk_mfc_dec_exe_info(mfc_ctx, dec_arg);		
-		}
-
-		memset(fileName0, 0, 50);
-		memset(fileName1, 0, 50);
-		memset(fileName2, 0, 50);
-
-		sprintf(fileName0, "/data/dec_in/mfc_decexe_instream_%d_%d.raw", nReturnErrCode, mframe_cnt);			
-		sprintf(fileName1, "/data/dec_in/mfc_decexe_mfcfw_%d_%d.bin", nReturnErrCode, mframe_cnt);			
-		sprintf(fileName2, "/data/dec_in/mfc_decexe_mfcctx_%d_%d.bin", nReturnErrCode, mframe_cnt);			
-
-		mfc_dec_in_base_vaddr = phys_to_virt(dec_arg->in_strm_buf);
-		ctx_virbuf = phys_to_virt(mcontext_addr);
-		fw_virbuf = mfc_get_fw_buff_vaddr();
-		
-		write_file(fileName0, mfc_dec_in_base_vaddr,dec_arg->in_strm_size);
-		write_file(fileName1, fw_virbuf,mfc_fw_code_len);
-		write_file(fileName2, ctx_virbuf,mcontext_size);	
-	
-}
-
-
-void makefile_mfc_decinit_err_info(mfc_inst_ctx *mfc_ctx, mfc_dec_init_arg_t *decinit_arg, int 	nReturnErrCode)
-{
-		char fileName0[50];
-		char fileName1[50];
-		char fileName2[50];
-		unsigned char *fw_virbuf;
-		unsigned char *ctx_virbuf;
-		unsigned char *mfc_dec_in_base_vaddr;
-		
-		mframe_cnt++;
-
-		printk("makefile_mfc_decinit_err_info : in_strm_size(%d) \n", decinit_arg->in_strm_size);
-
-		memset(fileName0, 0, 50);
-		memset(fileName1, 0, 50);
-		memset(fileName2, 0, 50);
-
-		sprintf(fileName0, "/data/dec_in/mfc_decinit_instream_%d_%d.raw", nReturnErrCode, mframe_cnt);			
-		sprintf(fileName1, "/data/dec_in/mfc_decinit_mfcfw_%d_%d.bin", nReturnErrCode, mframe_cnt);			
-		sprintf(fileName2, "/data/dec_in/mfc_decinit_mfcctx_%d_%d.bin", nReturnErrCode, mframe_cnt);			
-		
-		mfc_dec_in_base_vaddr = phys_to_virt(decinit_arg->in_strm_buf);
-		ctx_virbuf = phys_to_virt(mcontext_addr);
-		fw_virbuf = mfc_get_fw_buff_vaddr();
-		
-		write_file(fileName0, mfc_dec_in_base_vaddr,decinit_arg->in_strm_size);
-		write_file(fileName1, fw_virbuf,mfc_fw_code_len);
-		write_file(fileName2, ctx_virbuf,mcontext_size);	
-}
-#endif
-#endif
-
-#ifdef 	ENABLE_DEBUG_ENC_EXE_INTR_ERR
-#if	ENABLE_DEBUG_ENC_EXE_INTR_ERR
-void makefile_mfc_enc_err_info(mfc_enc_exe_arg *enc_arg)
-{
-	int nFrameSize = 0;
-	char fileName[50];
-	unsigned char *pLinearbuf;
-	 unsigned char *mfc_enc_in_base_Y_vaddr;
-	 unsigned char *mfc_enc_in_base_CbCr_vaddr;	
-	mframe_cnt++;
-
-	memset(fileName, 0, 50);
-	sprintf(fileName, "/data/enc_in/mfc_in_%04d.yuv", mframe_cnt);			
-	nFrameSize = mImgHight*mImgWidth*3/2;
-	pLinearbuf = kmalloc(nFrameSize, GFP_KERNEL);
-			
-	mfc_enc_in_base_Y_vaddr =phys_to_virt(enc_arg->in_Y_addr);
-	mfc_enc_in_base_CbCr_vaddr =phys_to_virt(enc_arg->in_CbCr_addr);	
-
-	mfc_debug("enc_arg->in_Y_addr : 0x%08x enc_arg->in_Y_addr_vir :0x%08x \r\n",
-			
-			enc_arg->in_Y_addr, mfc_enc_in_base_Y_vaddr);
-
-        tile_to_linear_4x2(pLinearbuf,mfc_enc_in_base_Y_vaddr, mImgWidth,mImgHight);
-        tile_to_linear_4x2(pLinearbuf+(mImgHight*mImgWidth), mfc_enc_in_base_CbCr_vaddr, mImgWidth,mImgHight/2);
-	write_file(fileName, pLinearbuf,nFrameSize);
-			
-	kfree(pLinearbuf);		
-}
-#endif
-#endif
-
-
-static int CheckMPEG4StartCode(unsigned char *src_mem, unsigned int remainSize)
-{
-    unsigned int 	index = 0;   
-
-	for(index = 0; index < remainSize-3; index++)
-	{
-		if((src_mem[index] == 0x00) && (src_mem[index+1] == 0x00) && (src_mem[index+2] == 0x01))
-			return index;
-	}
-
-	return -1;
-}
-
-#if	ENABLE_CHECK_START_CODE
-static int CheckDecStartCode(unsigned char *src_mem, unsigned int nstreamSize, SSBSIP_MFC_CODEC_TYPE nCodecType)
-{
-	unsigned int 	index = 0;   
-	unsigned int 	isearchSize = 20;  		// Check Start Code within "isearchSize" bytes.
-	unsigned int  	nShift = 0;
-	unsigned char  nFlag = 0xFF;
-	
-	if(nCodecType == H263_DEC){						nFlag = 0x08;			nShift = 4;}
-	else 	if(nCodecType == MPEG4_DEC){				nFlag = 0x01;			nShift = 0;}
-	else 	if(nCodecType == H264_DEC){				nFlag = 0x01;			nShift = 0;}
-	else															nFlag = 0xFF;
-	
-	if(nFlag != 0xFF){
-		if(nstreamSize > 3){
-			if(nstreamSize > isearchSize)	
-			{
-					for(index = 0; index < isearchSize-3; index++)	{		
-						if((src_mem[index] == 0x00) && (src_mem[index+1] == 0x00) && ((src_mem[index+2] >> nShift) == nFlag))				
-							return index;
-					}							
-			}
-			else
-			{
-					for(index = 0; index < nstreamSize - 3; index++)	{		
-						if((src_mem[index] == 0x00) && (src_mem[index+1] == 0x00) && ((src_mem[index+2] >> nShift) == nFlag))				
-							return index;
-					}	
-			}
-		}
-		else
-			return -1;		
-	}
-	else
-		return 0;
-		
-    return -1;
-}
-#endif
-
-#if	ENABLE_CHECK_NULL_STREAM
-static int CheckNullStream(unsigned char *src_mem, unsigned int streamSize)
-{
-	unsigned int temp = 0;
-	unsigned int	nn;
-	
-    if(streamSize < 30)    
-	{
-		for(nn = 0; nn < streamSize; nn++)
-			temp += src_mem[nn];
-	}
-	else
-	{
-		for(nn = 0; nn < 10; nn++)
-			temp += src_mem[nn];	
-		
-		if(temp == 0){
-			for(nn = streamSize-10; nn < streamSize; nn++)
-				temp += src_mem[nn];
-		}
-	}
-
-	if(temp == 0)
-	{
-		mfc_debug("Null Stream......Error \n");
-		return -1;
-	}
-	
-	return 0;
-
-}
-#endif
-
-#if ENABLE_MFC_REGISTER_DEBUG
-void	mfc_fw_debug(mfc_wait_done_type command)
-{
-		mfc_err("============== MFC FW Debug (Cmd: %d)	(Ver: 0x%08x)  ================= \n", command, READL(0x58));
-		mfc_err("=== (0x64: 0x%08x) (0x68: 0x%08x) (0xE4: 0x%08x) (0xE8: 0x%08x)\n", READL(0x64), READL(0x68), READL(0xe4), READL(0xe8));
-		mfc_err("=== (0xF0: 0x%08x) (0xF4: 0x%08x) (0xF8: 0x%08x) (0xFC: 0x%08x)\n", READL(0xf0), READL(0xf4), READL(0xf8), READL(0xfc));
-}
-#endif

@@ -21,7 +21,7 @@ case "$1" in
 esac
 
 if [ "$CPU_JOB_NUM" = "" ] ; then
-	CPU_JOB_NUM=8
+	CPU_JOB_NUM=2
 fi
 
 TARGET_LOCALE="vzw"

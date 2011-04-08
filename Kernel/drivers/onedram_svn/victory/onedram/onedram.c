@@ -36,7 +36,7 @@
 #include <linux/fs.h>
 #include <linux/poll.h>
 #include <linux/sched.h>
-
+#include <linux/slab.h>
 #define DRVNAME "onedram"
 
 #define ONEDRAM_REG_OFFSET 0xFFF800
@@ -590,7 +590,7 @@ static const struct file_operations onedram_fops = {
 	.open = onedram_open,
 	.release = onedram_release,
 	.mmap = onedram_mmap,
-	.ioctl = onedram_ioctl,
+	.unlocked_ioctl = onedram_ioctl,
 };
 
 static int _register_chrdev(struct onedram *od)

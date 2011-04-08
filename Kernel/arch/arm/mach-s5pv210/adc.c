@@ -201,30 +201,10 @@ s3c_adc_read(struct file *file, char __user *buffer,
 }
 
 
-static int s3c_adc_ioctl(struct inode *inode, struct file *file,
-	unsigned int cmd, unsigned long arg)
-{
-
-	switch (cmd) {
-	case ADC_INPUT_PIN:
-		adc_port = (unsigned int) arg;
-
-		if (adc_port >= 4)
-			printk(KERN_WARNING
-				" %d is already reserved for TouchScreen\n",
-				adc_port);
-		return 0;
-
-	default:
-		return -ENOIOCTLCMD;
-	}
-}
-
 static const struct file_operations s3c_adc_fops = {
 	.owner		= THIS_MODULE,
 	.read		= s3c_adc_read,
 	.open		= s3c_adc_open,
-	.ioctl		= s3c_adc_ioctl,
 };
 
 static struct miscdevice s3c_adc_miscdev = {

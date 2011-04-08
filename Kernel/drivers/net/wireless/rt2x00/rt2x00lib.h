@@ -1,5 +1,6 @@
 /*
-	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
+	Copyright (C) 2004 - 2009 Ivo van Doorn <IvDoorn@gmail.com>
+	Copyright (C) 2004 - 2009 Gertjan van Wingerde <gwingerde@gmail.com>
 	<http://rt2x00.serialmonkey.com>
 
 	This program is free software; you can redistribute it and/or modify
@@ -26,11 +27,10 @@
 #ifndef RT2X00LIB_H
 #define RT2X00LIB_H
 
-#include "rt2x00dump.h"
-
 /*
  * Interval defines
  */
+#define WATCHDOG_INTERVAL	round_jiffies_relative(HZ)
 #define LINK_TUNE_INTERVAL	round_jiffies_relative(HZ)
 
 /*
@@ -106,13 +106,6 @@ struct sk_buff *rt2x00queue_alloc_rxskb(struct rt2x00_dev *rt2x00dev,
 					struct queue_entry *entry);
 
 /**
- * rt2x00queue_unmap_skb - Unmap a skb from DMA.
- * @rt2x00dev: Pointer to &struct rt2x00_dev.
- * @skb: The skb to unmap.
- */
-void rt2x00queue_unmap_skb(struct rt2x00_dev *rt2x00dev, struct sk_buff *skb);
-
-/**
  * rt2x00queue_free_skb - free a skb
  * @rt2x00dev: Pointer to &struct rt2x00_dev.
  * @skb: The skb to free.
@@ -161,8 +154,10 @@ void rt2x00queue_remove_l2pad(struct sk_buff *skb, unsigned int header_length);
  * rt2x00queue_write_tx_frame - Write TX frame to hardware
  * @queue: Queue over which the frame should be send
  * @skb: The skb to send
+ * @local: frame is not from mac80211
  */
-int rt2x00queue_write_tx_frame(struct data_queue *queue, struct sk_buff *skb);
+int rt2x00queue_write_tx_frame(struct data_queue *queue, struct sk_buff *skb,
+			       bool local);
 
 /**
  * rt2x00queue_update_beacon - Send new beacon from mac80211 to hardware
@@ -223,19 +218,6 @@ void rt2x00link_update_stats(struct rt2x00_dev *rt2x00dev,
 			     struct rxdone_entry_desc *rxdesc);
 
 /**
- * rt2x00link_calculate_signal - Calculate signal quality
- * @rt2x00dev: Pointer to &struct rt2x00_dev.
- * @rssi: RX Frame RSSI
- *
- * Calculate the signal quality of a frame based on the rssi
- * measured during the receiving of the frame and the global
- * link quality statistics measured since the start of the
- * link tuning. The result is a value between 0 and 100 which
- * is an indication of the signal quality.
- */
-int rt2x00link_calculate_signal(struct rt2x00_dev *rt2x00dev, int rssi);
-
-/**
  * rt2x00link_start_tuner - Start periodic link tuner work
  * @rt2x00dev: Pointer to &struct rt2x00_dev.
  *
@@ -276,11 +258,30 @@ void rt2x00link_stop_tuner(struct rt2x00_dev *rt2x00dev);
 void rt2x00link_reset_tuner(struct rt2x00_dev *rt2x00dev, bool antenna);
 
 /**
- * rt2x00link_register - Initialize link tuning functionality
+ * rt2x00link_start_watchdog - Start periodic watchdog monitoring
  * @rt2x00dev: Pointer to &struct rt2x00_dev.
  *
- * Initialize work structure and all link tuning related
- * parameters. This will not start the link tuning process itself.
+ * This start the watchdog periodic work, this work will
+ *be executed periodically until &rt2x00link_stop_watchdog has
+ * been called.
+ */
+void rt2x00link_start_watchdog(struct rt2x00_dev *rt2x00dev);
+
+/**
+ * rt2x00link_stop_watchdog - Stop periodic watchdog monitoring
+ * @rt2x00dev: Pointer to &struct rt2x00_dev.
+ *
+ * After this function completed the watchdog monitoring will not
+ * be running until &rt2x00link_start_watchdog is called.
+ */
+void rt2x00link_stop_watchdog(struct rt2x00_dev *rt2x00dev);
+
+/**
+ * rt2x00link_register - Initialize link tuning & watchdog functionality
+ * @rt2x00dev: Pointer to &struct rt2x00_dev.
+ *
+ * Initialize work structure and all link tuning and watchdog related
+ * parameters. This will not start the periodic work itself.
  */
 void rt2x00link_register(struct rt2x00_dev *rt2x00dev);
 
@@ -306,8 +307,6 @@ static inline void rt2x00lib_free_firmware(struct rt2x00_dev *rt2x00dev)
 #ifdef CONFIG_RT2X00_LIB_DEBUGFS
 void rt2x00debug_register(struct rt2x00_dev *rt2x00dev);
 void rt2x00debug_deregister(struct rt2x00_dev *rt2x00dev);
-void rt2x00debug_dump_frame(struct rt2x00_dev *rt2x00dev,
-			    enum rt2x00_dump_type type, struct sk_buff *skb);
 void rt2x00debug_update_crypto(struct rt2x00_dev *rt2x00dev,
 			       struct rxdone_entry_desc *rxdesc);
 #else
@@ -316,12 +315,6 @@ static inline void rt2x00debug_register(struct rt2x00_dev *rt2x00dev)
 }
 
 static inline void rt2x00debug_deregister(struct rt2x00_dev *rt2x00dev)
-{
-}
-
-static inline void rt2x00debug_dump_frame(struct rt2x00_dev *rt2x00dev,
-					  enum rt2x00_dump_type type,
-					  struct sk_buff *skb)
 {
 }
 
@@ -394,11 +387,20 @@ static inline void rt2x00crypto_rx_insert_iv(struct sk_buff *skb,
 void rt2x00ht_create_tx_descriptor(struct queue_entry *entry,
 				   struct txentry_desc *txdesc,
 				   const struct rt2x00_rate *hwrate);
+
+u16 rt2x00ht_center_channel(struct rt2x00_dev *rt2x00dev,
+			    struct ieee80211_conf *conf);
 #else
 static inline void rt2x00ht_create_tx_descriptor(struct queue_entry *entry,
 						 struct txentry_desc *txdesc,
 						 const struct rt2x00_rate *hwrate)
 {
+}
+
+static inline u16 rt2x00ht_center_channel(struct rt2x00_dev *rt2x00dev,
+					  struct ieee80211_conf *conf)
+{
+	return conf->channel->hw_value;
 }
 #endif /* CONFIG_RT2X00_LIB_HT */
 

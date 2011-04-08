@@ -5,9 +5,6 @@
  * Copyright (C) 2006 - 2007 Ivo van Doorn
  * Copyright (C) 2007 Dmitry Torokhov
  * Copyright 2009 Johannes Berg <johannes@sipsolutions.net>
- * This program is free software; you can redistribute it and/or modify      
- * it under the terms of the GNU General Public License version 2 as         
- * published by the Free Software Foundation.                                
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -24,15 +21,6 @@
 
 #include <linux/types.h>
 
-#if defined CONFIG_S5PV210_VICTORY
-enum rfkill_state {
-        RFKILL_STATE_SOFT_BLOCKED = 0,  /* Radio output blocked */
-        RFKILL_STATE_UNBLOCKED    = 1,  /* Radio output allowed */
-        RFKILL_STATE_HARD_BLOCKED = 2,  /* Output blocked, non-overrideable */
-        RFKILL_STATE_MAX,               /* marker for last valid state */
-};
-int rfkill_force_state(struct rfkill *rfkill, enum rfkill_state state);
-#endif
 /* define userspace visible states */
 #define RFKILL_STATE_SOFT_BLOCKED	0
 #define RFKILL_STATE_UNBLOCKED		1
@@ -41,12 +29,14 @@ int rfkill_force_state(struct rfkill *rfkill, enum rfkill_state state);
 /**
  * enum rfkill_type - type of rfkill switch.
  *
- * @RFKILL_TYPE_ALL: toggles all switches (userspace only)
+ * @RFKILL_TYPE_ALL: toggles all switches (requests only - not a switch type)
  * @RFKILL_TYPE_WLAN: switch is on a 802.11 wireless network device.
  * @RFKILL_TYPE_BLUETOOTH: switch is on a bluetooth device.
  * @RFKILL_TYPE_UWB: switch is on a ultra wideband device.
  * @RFKILL_TYPE_WIMAX: switch is on a WiMAX device.
  * @RFKILL_TYPE_WWAN: switch is on a wireless WAN device.
+ * @RFKILL_TYPE_GPS: switch is on a GPS device.
+ * @RFKILL_TYPE_FM: switch is on a FM radio device.
  * @NUM_RFKILL_TYPES: number of defined rfkill types
  */
 enum rfkill_type {
@@ -57,6 +47,7 @@ enum rfkill_type {
 	RFKILL_TYPE_WIMAX,
 	RFKILL_TYPE_WWAN,
 	RFKILL_TYPE_GPS,
+	RFKILL_TYPE_FM,
 	NUM_RFKILL_TYPES,
 };
 
@@ -90,7 +81,7 @@ struct rfkill_event {
 	__u8  type;
 	__u8  op;
 	__u8  soft, hard;
-} __packed;
+} __attribute__((packed));
 
 /*
  * We are planning to be backward and forward compatible with changes
@@ -119,12 +110,9 @@ enum rfkill_user_states {
 	RFKILL_USER_STATE_UNBLOCKED	= RFKILL_STATE_UNBLOCKED,
 	RFKILL_USER_STATE_HARD_BLOCKED	= RFKILL_STATE_HARD_BLOCKED,
 };
-
-#if CONFIG_S5PV210_ATLAS		 
 #undef RFKILL_STATE_SOFT_BLOCKED
 #undef RFKILL_STATE_UNBLOCKED
 #undef RFKILL_STATE_HARD_BLOCKED
-#endif
 
 #include <linux/kernel.h>
 #include <linux/list.h>

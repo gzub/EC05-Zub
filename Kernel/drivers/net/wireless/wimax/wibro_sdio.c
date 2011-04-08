@@ -983,7 +983,7 @@ static struct file_operations uwbr_fops = {
 	owner:		THIS_MODULE,
 	open:		uwbrdev_open,
 	release:		uwbrdev_release,
-	ioctl:		uwbrdev_ioctl,
+	unlocked_ioctl:		uwbrdev_ioctl,
 	read:		uwbrdev_read,
 	write:		uwbrdev_write,
 };

@@ -61,7 +61,7 @@ void mfc_write_shared_mem(unsigned int host_wr_addr, MFC_SHARED_MEM *shared_mem)
 	mfc_write_shared_mem_item(host_wr_addr, ALLOCATED_CHROMA_DPB_SIZE	, shared_mem->allocated_chroma_dpb_size);
 	mfc_write_shared_mem_item(host_wr_addr, ALLOCATED_MV_SIZE			, shared_mem->allocated_mv_size);
 	mfc_write_shared_mem_item(host_wr_addr, P720_LIMIT_ENABLE			, shared_mem->p720_limit_enable);
-	dmac_clean_range((void *)host_wr_addr, (void *)(host_wr_addr + SHARED_MEM_MAX));
+	//dmac_clean_range((void *)host_wr_addr, (void *)(host_wr_addr + SHARED_MEM_MAX));
 
 #if	DEBUG_ENABLE	
 	mfc_print_shared_mem(host_wr_addr);
@@ -70,7 +70,7 @@ void mfc_write_shared_mem(unsigned int host_wr_addr, MFC_SHARED_MEM *shared_mem)
 
 void mfc_read_shared_mem(unsigned int host_wr_addr, MFC_SHARED_MEM *shared_mem)
 {
-	dmac_inv_range((void *)host_wr_addr, (void *)(host_wr_addr + SHARED_MEM_MAX));
+	//dmac_inv_range((void *)host_wr_addr, (void *)(host_wr_addr + SHARED_MEM_MAX));
 	shared_mem->extended_decode_status = mfc_read_shared_mem_item(host_wr_addr, EXTENEDED_DECODE_STATUS);
 	shared_mem->get_frame_tag_top      = mfc_read_shared_mem_item(host_wr_addr, GET_FRAME_TAG_TOP);
 	shared_mem->get_frame_tag_bot      = mfc_read_shared_mem_item(host_wr_addr, GET_FRAME_TAG_BOT);

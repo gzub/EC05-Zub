@@ -25,6 +25,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/io.h>
 #include <linux/sched.h>
+#include <linux/slab.h>
 
 #include <asm/atomic.h>
 #include <asm/cacheflush.h>
@@ -129,7 +130,7 @@ static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
 	return mask;
 }
 
-static int g2d_ioctl(struct inode *inode, struct file *file,
+static int g2d_ioctl(struct file *inode, struct file *file,
 		     unsigned int cmd, unsigned long arg)
 {
 	struct g2d_dma_info dma_info;
@@ -150,11 +151,13 @@ static int g2d_ioctl(struct inode *inode, struct file *file,
 
 	switch (cmd) {
 	case G2D_DMA_CACHE_INVAL:
-		dmac_inv_range(vaddr, vaddr + dma_info.size);
+		dmac_unmap_area((void *)vaddr, dma_info.size, DMA_TO_DEVICE);
+                outer_inv_range(__pa((u32) (void *)vaddr), __pa((u32) (void *)vaddr + dma_info.size)); 
 		break;
 
 	case G2D_DMA_CACHE_CLEAN:
-		dmac_clean_range(vaddr, vaddr + dma_info.size);
+ 		dmac_map_area((void *)vaddr, dma_info.size, DMA_FROM_DEVICE);
+                outer_clean_range(__pa((u32) (void *)vaddr), __pa((u32) (void *)vaddr + dma_info.size)); 
 		break;
 
 	case G2D_DMA_CACHE_FLUSH:
@@ -167,14 +170,13 @@ static int g2d_ioctl(struct inode *inode, struct file *file,
 
 	return 0;
 }
-
 static const struct file_operations g2d_fops = {
 	.owner		= THIS_MODULE,
 	.open		= g2d_open,
 	.release	= g2d_release,
 	.mmap		= g2d_mmap,
 	.poll		= g2d_poll,
-	.ioctl		= g2d_ioctl,
+	.unlocked_ioctl	= g2d_ioctl,
 };
 
 static struct miscdevice g2d_dev = {

@@ -24,7 +24,7 @@
 #include <linux/mutex.h>
 #include <linux/rcupdate.h>
 #include <linux/smp_lock.h>
-
+#include <linux/slab.h>
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 #include <linux/kernel_sec_common.h>
 #endif
@@ -825,7 +825,7 @@ static int input_default_setkeycode(struct input_dev *dev,
  * This function should be called by anyone interested in retrieving current
  * keymap. Presently keyboard and evdev handlers use it.
  */
-int input_get_keycode(struct input_dev *dev, int scancode, int *keycode)
+int input_get_keycode(struct input_dev *dev, unsigned int scancode, unsigned int *keycode)
 {
 	if (scancode < 0)
 		return -EINVAL;
@@ -843,7 +843,7 @@ EXPORT_SYMBOL(input_get_keycode);
  * This function should be called by anyone needing to update current
  * keymap. Presently keyboard and evdev handlers use it.
  */
-int input_set_keycode(struct input_dev *dev, int scancode, int keycode)
+int input_set_keycode(struct input_dev *dev, unsigned int scancode, unsigned int keycode)
 {
 	unsigned long flags;
 	int old_keycode;

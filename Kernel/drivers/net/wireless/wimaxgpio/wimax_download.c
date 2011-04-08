@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/slab.h>
 #if defined (CONFIG_MACH_QUATTRO) //cky 20100224
 #include <linux/i2c/maximi2c.h>
 #include <linux/i2c/pmic.h>

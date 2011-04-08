@@ -2671,17 +2671,17 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 80 * SZ_1M;
-	mi->bank[0].node = 0;
+//	mi->bank[0].node = 0;
 
 	mi->bank[1].start = 0x40000000;
         //mi->bank[1].size = 256 * SZ_1M;
         mi->bank[1].size = 256 * SZ_1M; /* this value wil be changed to 256MB */
-        mi->bank[1].node = 1;
+//        mi->bank[1].node = 1;
 
 	#ifdef CONFIG_DDR_RAM_3G
         mi->bank[2].start = 0x50000000;
         mi->bank[2].size = 128 * SZ_1M;
-        mi->bank[2].node = 2;
+//        mi->bank[2].node = 2;
         mi->nr_banks = 3;
 	#else
         mi->nr_banks = 2;

@@ -31,7 +31,7 @@
 #include <linux/kdev_t.h>
 #include <linux/workqueue.h>
 #include <linux/timer.h>
-
+#include <linux/slab.h>
 #include <linux/modemctl.h>
 
 #ifdef CONFIG_HAS_WAKELOCK

@@ -158,7 +158,7 @@ static struct file_operations level_fops =
 {
 	.owner = THIS_MODULE,
 	.open = level_open,
-	.ioctl = level_ioctl,
+//	.ioctl = level_ioctl,
 };
 
 static struct miscdevice level_device = {

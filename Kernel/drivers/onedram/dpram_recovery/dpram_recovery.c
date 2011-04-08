@@ -13,6 +13,7 @@
 #include <linux/mm.h>
 #include <linux/irq.h>
 #include <linux/poll.h>
+#include <linux/slab.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <mach/regs-gpio.h>
@@ -813,7 +814,7 @@ static struct file_operations dpram_recovery_fops = {
     .owner = THIS_MODULE,
     .read = dpram_recovery_read,
     .write = dpram_recovery_write,
-    .ioctl = dpram_recovery_ioctl,
+    .unlocked_ioctl = dpram_recovery_ioctl,
     .open = dpram_recovery_open,
     .release = dpram_recovery_release,
 };

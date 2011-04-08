@@ -110,6 +110,12 @@ config S3C_GPIO_PULL_UP
 	help
 	  Internal configuration to enable the correct GPIO pull helper
 
+config S5P_GPIO_DRVSTR
+	bool
+	help
+	  Internal configuration to get and set correct GPIO driver strength
+	  helper
+
 config SAMSUNG_GPIO_EXTRA
 	int "Number of additional GPIO pins"
 	default 0
@@ -165,6 +171,11 @@ config S3C_DEV_HSMMC3
 	help
 	  Compile in platform device definitions for HSMMC channel 3
 
+config S3C_DEV_HWMON
+	bool
+	help
+	    Compile in platform device definitions for HWMON
+
 config S3C_DEV_I2C1
 	bool "I2C1 Information"
 	help
@@ -190,10 +201,36 @@ config S3C_DEV_USB_HSOTG
 	help
 	  Compile in platform device definition for USB high-speed OtG
 
+config S3C_DEV_WDT
+	bool
+	default y if ARCH_S3C2410
+	help
+	  Complie in platform device definition for Watchdog Timer
+
 config S3C_DEV_NAND
 	bool
 	help
 	  Compile in platform device definition for NAND controller
+
+config S3C_DEV_ONENAND
+	bool
+	help
+	  Compile in platform device definition for OneNAND controller
+
+config S3C_DEV_RTC
+	bool
+	help
+	  Complie in platform device definition for RTC
+
+config SAMSUNG_DEV_ADC
+	bool
+	help
+	  Compile in platform device definition for ADC controller
+
+config SAMSUNG_DEV_IDE
+	bool
+	help
+	  Compile in platform device definitions for IDE
 
 config S3C64XX_DEV_SPI
 	bool
@@ -201,6 +238,15 @@ config S3C64XX_DEV_SPI
 	  Compile in platform device definitions for S3C64XX's type
 	  SPI controllers.
 
+config SAMSUNG_DEV_TS
+	bool
+	help
+	    Common in platform device definitions for touchscreen device
+
+config SAMSUNG_DEV_KEYPAD
+	bool
+	help
+	  Compile in platform device definitions for keypad
 config S5P_HAVE_PWM
 	  bool "PWM device support"
 	  select HAVE_PWM
@@ -213,6 +259,12 @@ config S3C_DMA
 	bool
 	help
 	  Internal configuration for S3C DMA core
+
+config S3C_PL330_DMA
+	bool
+	select PL330
+	help
+	  S3C DMA API Driver for PL330 DMAC.
 
 comment "Power management"
 
@@ -258,5 +310,13 @@ config SAMSUNG_PM_CHECK_CHUNKSIZE
 	  faults with better precision.
 
 	  See <file:Documentation/arm/Samsung-S3C24XX/Suspend.txt>
+
+config SAMSUNG_WAKEMASK
+	bool
+	depends on PM
+	help
+	  Compile support for wakeup-mask controls found on the S3C6400
+	  and above. This code allows a set of interrupt to wakeup-mask
+	  mappings. See <plat/wakeup-mask.h>
 
 endif

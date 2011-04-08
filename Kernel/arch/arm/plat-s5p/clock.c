@@ -46,13 +46,14 @@ struct clk clk_xusbxti = {
 	.rate		= 24000000,
 };
 
+
 struct clk clk_xrtcxti = {
-	.name		= "xrtcxti",
-	.id		= -1,
-	.rate		= 32768,
+        .name           = "xrtcxti",
+        .id             = -1,
+        .rate           = 32768,
 };
 
-static struct clk s5p_clk_27m = {
+struct clk s5p_clk_27m = {
 	.name		= "clk_27m",
 	.id		= -1,
 	.rate		= 27000000,
@@ -84,6 +85,13 @@ struct clk clk_fout_mpll = {
 /* EPLL clock output */
 struct clk clk_fout_epll = {
 	.name		= "fout_epll",
+	.id		= -1,
+	.ctrlbit	= (1 << 31),
+};
+
+/* VPLL clock output */
+struct clk clk_fout_vpll = {
+	.name		= "fout_vpll",
 	.id		= -1,
 	.ctrlbit	= (1 << 31),
 };
@@ -201,8 +209,10 @@ static struct clk *s5p_clks[] __initdata = {
 	&clk_fout_apll,
 	&clk_fout_mpll,
 	&clk_fout_epll,
+	&clk_fout_vpll,
 	&clk_arm,
 	&clk_vpll,
+	&clk_xusbxti,
 };
 
 void __init s5p_register_clocks(unsigned long xtal_freq)

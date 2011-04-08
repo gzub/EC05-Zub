@@ -6,11 +6,6 @@
  *  Written 1992,1993 by Werner Almesberger
  *
  *  Hidden files 1995 by Albert Cahalan <albert@ccs.neu.edu> <adc@coe.neu.edu>
- *                                                                           
- * This program is free software; you can redistribute it and/or modify      
- * it under the terms of the GNU General Public License version 2 as         
- * published by the Free Software Foundation.                                
- *                                                                           
  *
  *  VFAT extensions by Gordon Chaffee <chaffee@plateau.cs.berkeley.edu>
  *  Merged with msdos fs by Henrik Storner <storner@osiris.ping.dk>
@@ -24,6 +19,7 @@
 #include <linux/buffer_head.h>
 #include <linux/compat.h>
 #include <asm/uaccess.h>
+#include <linux/kernel.h>
 #include "fat.h"
 
 /*
@@ -102,7 +98,7 @@ next:
 
 	*bh = sb_bread(sb, phys);
 	if (*bh == NULL) {
-		printk(KERN_DEBUG "FAT: Directory bread(block %llu) failed\n",
+		printk(KERN_ERR "FAT: Directory bread(block %llu) failed\n",
 		       (llu)phys);
 		/* skip this block */
 		*pos = (iblock + 1) << sb->s_blocksize_bits;
@@ -145,28 +141,22 @@ static int uni16_to_x8(unsigned char *ascii, const wchar_t *uni, int len,
 {
 	const wchar_t *ip;
 	wchar_t ec;
-	unsigned char *op, nc;
+	unsigned char *op;
 	int charlen;
-	int k;
 
 	ip = uni;
 	op = ascii;
 
 	while (*ip && ((len - NLS_MAX_CHARSET_SIZE) > 0)) {
 		ec = *ip++;
-		if ( (charlen = nls->uni2char(ec, op, NLS_MAX_CHARSET_SIZE)) > 0) {
+		if ((charlen = nls->uni2char(ec, op, NLS_MAX_CHARSET_SIZE)) > 0) {
 			op += charlen;
 			len -= charlen;
 		} else {
 			if (uni_xlate == 1) {
-				*op = ':';
-				for (k = 4; k > 0; k--) {
-					nc = ec & 0xF;
-					op[k] = nc > 9	? nc + ('a' - 10)
-							: nc + '0';
-					ec >>= 4;
-				}
-				op += 5;
+				*op++ = ':';
+				op = pack_hex_byte(op, ec >> 8);
+				op = pack_hex_byte(op, ec);
 				len -= 5;
 			} else {
 				*op++ = '?';
@@ -770,9 +760,10 @@ static int fat_ioctl_volume_id(struct inode *dir)
 	return sbi->vol_id;
 }
 
-static int fat_dir_ioctl(struct inode *inode, struct file *filp,
-			 unsigned int cmd, unsigned long arg)
+static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+			  unsigned long arg)
 {
+	struct inode *inode = filp->f_path.dentry->d_inode;
 	struct __fat_dirent __user *d1 = (struct __fat_dirent __user *)arg;
 	int short_only, both;
 
@@ -788,7 +779,7 @@ static int fat_dir_ioctl(struct inode *inode, struct file *filp,
 	case VFAT_IOCTL_GET_VOLUME_ID:
 		return fat_ioctl_volume_id(inode);
 	default:
-		return fat_generic_ioctl(inode, filp, cmd, arg);
+		return fat_generic_ioctl(filp, cmd, arg);
 	}
 
 	if (!access_ok(VERIFY_WRITE, d1, sizeof(struct __fat_dirent[2])))
@@ -828,7 +819,7 @@ static long fat_compat_dir_ioctl(struct file *filp, unsigned cmd,
 		both = 1;
 		break;
 	default:
-		return -ENOIOCTLCMD;
+		return fat_generic_ioctl(filp, cmd, (unsigned long)arg);
 	}
 
 	if (!access_ok(VERIFY_WRITE, d1, sizeof(struct compat_dirent[2])))
@@ -850,7 +841,7 @@ const struct file_operations fat_dir_operations = {
 	.llseek		= generic_file_llseek,
 	.read		= generic_read_dir,
 	.readdir	= fat_readdir,
-	.ioctl		= fat_dir_ioctl,
+	.unlocked_ioctl	= fat_dir_ioctl,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl	= fat_compat_dir_ioctl,
 #endif

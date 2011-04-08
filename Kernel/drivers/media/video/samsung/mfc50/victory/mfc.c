@@ -231,7 +231,7 @@ out_release:
 	return ret;
 }
 
-static int mfc_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+static int mfc_ioctl(struct file *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int ret, ex_ret;
 	mfc_inst_ctx *mfc_ctx = NULL;
@@ -568,7 +568,7 @@ static struct file_operations mfc_fops = {
 	.owner      = THIS_MODULE,
 	.open       = mfc_open,
 	.release    = mfc_release,
-	.ioctl      = mfc_ioctl,
+	.unlocked_ioctl      = mfc_ioctl,
 	.mmap       = mfc_mmap
 };
 

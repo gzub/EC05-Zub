@@ -15,6 +15,7 @@
 #include <linux/string.h>
 #include <linux/platform_device.h>
 #include <linux/fb.h>
+#include <linux/gfp.h>
 #if defined CONFIG_S5PV210_VICTORY
 #include <mach/victory/irqs.h>
 #elif defined CONFIG_S5PV210_ATLAS

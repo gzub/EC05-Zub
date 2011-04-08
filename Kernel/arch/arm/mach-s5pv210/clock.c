@@ -720,9 +720,14 @@ static struct clksrc_clk clk_mout_epll = {
 static struct clk clk_sclk_hdmi27m = {
 	.name		= "sclk_hdmi27m",
 	.id		= -1,
+	.rate		= 27000000,
 };
 
-/* VPLL Source Clock */
+static struct clk clk_pcmcdclk2 = {
+	.name		= "pcmcdclk",
+	.id		= -1,
+};
+
 static struct clk *clkset_vpllsrc_list[] = {
 	[0] = &clk_fin_epll,
 	[1] = &clk_sclk_hdmi27m,
@@ -734,7 +739,7 @@ static struct clksrc_sources clkset_vpllsrc = {
 };
 
 static struct clksrc_clk clk_vpllsrc = {
-	.clk		= {
+	.clk	= {
 		.name		= "vpll_src",
 		.id		= -1,
 		.enable		= s5pv210_clk_mask0_ctrl,
@@ -1606,6 +1611,14 @@ static struct clksrc_clk clk_copy = {
 
 static struct clksrc_clk clksrcs[] = {
 	{
+		.clk	= {
+			.name		= "sclk_dmc",
+			.id		= -1,
+		},
+		.sources = &clkset_group1,
+		.reg_src = { .reg = S5P_CLK_SRC6, .shift = 24, .size = 2 },
+		.reg_div = { .reg = S5P_CLK_DIV6, .shift = 28, .size = 4 },
+	}, {
 		.clk	= {
 			.name		= "sclk_onenand",
 			.id		= -1,
@@ -3438,11 +3451,11 @@ void __init s5pv210_register_clocks(void)
 	if (ret > 0)
 		printk(KERN_ERR "Failed to register %u clocks\n", ret);
 
-	s3c_register_clksrc(clksrcs, ARRAY_SIZE(clksrcs));
-	s3c_register_clocks(init_clocks, ARRAY_SIZE(init_clocks));
-
 	for (ptr = 0; ptr < ARRAY_SIZE(sys_clksrc); ptr++)
 		s3c_register_clksrc(sys_clksrc[ptr], 1);
+
+	s3c_register_clksrc(clksrcs, ARRAY_SIZE(clksrcs));
+	s3c_register_clocks(init_clocks, ARRAY_SIZE(init_clocks));
 
 	clkp = init_clocks_disable;
 	for (ptr = 0; ptr < ARRAY_SIZE(init_clocks_disable); ptr++, clkp++) {

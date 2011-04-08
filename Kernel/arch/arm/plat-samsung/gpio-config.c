@@ -1,7 +1,7 @@
 /* linux/arch/arm/plat-s3c/gpio-config.c
  *
  * Copyright 2008 Openmoko, Inc.
- * Copyright 2008 Simtec Electronics
+ * Copyright 2008-2010 Simtec Electronics
  *	Ben Dooks <ben@simtec.co.uk>
  *	http://armlinux.simtec.co.uk/
  *

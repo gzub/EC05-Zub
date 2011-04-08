@@ -2846,7 +2846,7 @@ static void unregister_dpram_driver(void)
 	tty_unregister_driver(dpram_tty_driver);
 }
 
-static int multipdp_ioctl(struct inode *inode, struct file *file, 
+static int multipdp_ioctl(struct file *inode, struct file *file, 
 			      unsigned int cmd, unsigned long arg)
 {
 	return -EINVAL;
@@ -2854,7 +2854,7 @@ static int multipdp_ioctl(struct inode *inode, struct file *file,
 
 static struct file_operations multipdp_fops = {
 	.owner =	THIS_MODULE,
-	.ioctl =	multipdp_ioctl,
+	.unlocked_ioctl =	multipdp_ioctl,
 	.llseek =	no_llseek,
 };
 

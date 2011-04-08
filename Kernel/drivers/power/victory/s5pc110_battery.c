@@ -25,6 +25,7 @@
 #include <linux/jiffies.h>
 #include <linux/irq.h>
 #include <linux/wakelock.h>
+#include <linux/slab.h>
 #include <asm/mach-types.h>
 #include <mach/hardware.h>
 #include <mach/battery.h>
@@ -864,7 +865,7 @@ static int s3c_power_get_property(struct power_supply *bat_ps,
 
 #define SEC_BATTERY_ATTR(_name)								\
 {											\
-        .attr = { .name = #_name, .mode = S_IRUGO | S_IWUGO, .owner = THIS_MODULE },	\
+        .attr = { .name = #_name, .mode = S_IRUGO | S_IWUGO },	\
         .show = s3c_bat_show_property,							\
         .store = s3c_bat_store,								\
 }

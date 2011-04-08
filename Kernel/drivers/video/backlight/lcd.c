@@ -2,9 +2,7 @@
  * LCD Lowlevel Control Abstraction
  *
  * Copyright (C) 2003,2004 Hewlett-Packard Company
- * This program is free software; you can redistribute it and/or modify      
- * it under the terms of the GNU General Public License version 2 as         
- * published by the Free Software Foundation.                                
+ *
  */
 
 #include <linux/module.h>
@@ -15,6 +13,7 @@
 #include <linux/ctype.h>
 #include <linux/err.h>
 #include <linux/fb.h>
+#include <linux/slab.h>
 
 #if defined(CONFIG_FB) || (defined(CONFIG_FB_MODULE) && \
 			   defined(CONFIG_LCD_CLASS_DEVICE_MODULE))
@@ -58,12 +57,7 @@ static int fb_notifier_callback(struct notifier_block *self,
 
 static int lcd_register_fb(struct lcd_device *ld)
 {
-
-#ifdef CONFIG_S5PV210_VICTORY
-	memset(&ld->fb_notif, 0, sizeof(&ld->fb_notif));
-#elif CONFIG_S5PV210_ATLAS
 	memset(&ld->fb_notif, 0, sizeof(ld->fb_notif));
-#endif
 	ld->fb_notif.notifier_call = fb_notifier_callback;
 	return fb_register_client(&ld->fb_notif);
 }
@@ -108,7 +102,7 @@ static ssize_t lcd_store_power(struct device *dev,
 	int power = simple_strtoul(buf, &endp, 0);
 	size_t size = endp - buf;
 
-	if (*endp && isspace(*endp))
+	if (isspace(*endp))
 		size++;
 	if (size != count)
 		return -EINVAL;
@@ -147,7 +141,7 @@ static ssize_t lcd_store_contrast(struct device *dev,
 	int contrast = simple_strtoul(buf, &endp, 0);
 	size_t size = endp - buf;
 
-	if (*endp && isspace(*endp))
+	if (isspace(*endp))
 		size++;
 	if (size != count)
 		return -EINVAL;
@@ -180,7 +174,7 @@ static void lcd_device_release(struct device *dev)
 }
 
 static struct device_attribute lcd_device_attributes[] = {
-	__ATTR(lcd_power, 0666, lcd_show_power, lcd_store_power),
+	__ATTR(lcd_power, 0644, lcd_show_power, lcd_store_power),
 	__ATTR(contrast, 0644, lcd_show_contrast, lcd_store_contrast),
 	__ATTR(max_contrast, 0444, lcd_show_max_contrast, NULL),
 	__ATTR_NULL,

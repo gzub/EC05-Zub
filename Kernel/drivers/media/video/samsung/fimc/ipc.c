@@ -19,6 +19,7 @@
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
+#include <linux/slab.h>
 #include <linux/memory.h>
 #include <plat/clock.h>
 #include <plat/regs-ipc.h>

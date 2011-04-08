@@ -16,7 +16,10 @@ obj-$(CONFIG_CPU_S5PV210)	+= cpu.o init.o clock.o gpio.o dma.o pd.o irq-eint-gro
 
 # machine support
 
+obj-$(CONFIG_MACH_AQUILA)	+= mach-aquila.o
 obj-$(CONFIG_MACH_SMDKV210)	+= mach-smdkv210.o
+obj-$(CONFIG_MACH_SMDKC110)	+= mach-smdkc110.o
+obj-$(CONFIG_MACH_GONI)		+= mach-goni.o
 
 ifeq ($(CONFIG_S5PV210_VICTORY),y)
 obj-$(CONFIG_MACH_SMDKC110)	+= victory/mach-smdkc110.o

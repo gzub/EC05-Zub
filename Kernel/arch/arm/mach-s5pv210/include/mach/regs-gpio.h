@@ -355,4 +355,10 @@
 #define S5P_EXTINT_RISEEDGE		(0x03)
 #define S5P_EXTINT_BOTHEDGE		(0x04)
 
+#define EINT_MODE		S3C_GPIO_SFN(0xf)
+
+#define EINT_GPIO_0(x)		S5PV210_GPH0(x)
+#define EINT_GPIO_1(x)		S5PV210_GPH1(x)
+#define EINT_GPIO_2(x)		S5PV210_GPH2(x)
+#define EINT_GPIO_3(x)		S5PV210_GPH3(x)
 #endif /* __ASM_ARCH_REGS_GPIO_H */

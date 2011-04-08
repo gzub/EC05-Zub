@@ -76,6 +76,17 @@
  */
 #define IOREMAP_MAX_ORDER	24
 
+/*
+ * Size of DMA-consistent memory region.  Must be multiple of 2M,
+ * between 2MB and 14MB inclusive.
+ */
+#ifndef CONSISTENT_DMA_SIZE
+#define CONSISTENT_DMA_SIZE 	SZ_2M
+#endif
+
+#define CONSISTENT_END		(0xffe00000UL)
+#define CONSISTENT_BASE		(CONSISTENT_END - CONSISTENT_DMA_SIZE)
+
 #else /* CONFIG_MMU */
 
 /*
@@ -93,11 +104,11 @@
 #endif
 
 #ifndef PHYS_OFFSET
-#define PHYS_OFFSET 		(CONFIG_DRAM_BASE)
+#define PHYS_OFFSET 		UL(CONFIG_DRAM_BASE)
 #endif
 
 #ifndef END_MEM
-#define END_MEM     		(CONFIG_DRAM_BASE + CONFIG_DRAM_SIZE)
+#define END_MEM     		(UL(CONFIG_DRAM_BASE) + CONFIG_DRAM_SIZE)
 #endif
 
 #ifndef PAGE_OFFSET
@@ -113,11 +124,12 @@
 #endif /* !CONFIG_MMU */
 
 /*
- * Size of DMA-consistent memory region.  Must be multiple of 2M,
- * between 2MB and 14MB inclusive.
+ * We fix the TCM memories max 32 KiB ITCM resp DTCM at these
+ * locations
  */
-#ifndef CONSISTENT_DMA_SIZE
-#define CONSISTENT_DMA_SIZE SZ_2M
+#ifdef CONFIG_HAVE_TCM
+#define ITCM_OFFSET	UL(0xfffe0000)
+#define DTCM_OFFSET	UL(0xfffe8000)
 #endif
 
 /*
@@ -125,14 +137,22 @@
  * private definitions which should NOT be used outside memory.h
  * files.  Use virt_to_phys/phys_to_virt/__pa/__va instead.
  */
+#ifndef __virt_to_phys
 #define __virt_to_phys(x)	((x) - PAGE_OFFSET + PHYS_OFFSET)
 #define __phys_to_virt(x)	((x) - PHYS_OFFSET + PAGE_OFFSET)
+#endif
 
 /*
  * Convert a physical address to a Page Frame Number and back
  */
 #define	__phys_to_pfn(paddr)	((paddr) >> PAGE_SHIFT)
 #define	__pfn_to_phys(pfn)	((pfn) << PAGE_SHIFT)
+
+/*
+ * Convert a page to/from a physical address
+ */
+#define page_to_phys(page)	(__pfn_to_phys(page_to_pfn(page)))
+#define phys_to_page(phys)	(pfn_to_page(__phys_to_pfn(phys)))
 
 #ifndef __ASSEMBLY__
 
@@ -147,7 +167,7 @@
 #endif
 
 #ifndef arch_adjust_zones
-#define arch_adjust_zones(node,size,holes) do { } while (0)
+#define arch_adjust_zones(size,holes) do { } while (0)
 #elif !defined(CONFIG_ZONE_DMA)
 #error "custom arch_adjust_zones() requires CONFIG_ZONE_DMA"
 #endif
@@ -194,7 +214,8 @@ static inline void *phys_to_virt(unsigned long x)
 #ifndef __virt_to_bus
 #define __virt_to_bus	__virt_to_phys
 #define __bus_to_virt	__phys_to_virt
-#define __pfn_to_bus(x)	((x) << PAGE_SHIFT)
+#define __pfn_to_bus(x)	__pfn_to_phys(x)
+#define __bus_to_pfn(x)	__phys_to_pfn(x)
 #endif
 
 static inline __deprecated unsigned long virt_to_bus(void *x)
@@ -291,11 +312,6 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
 #endif /* NODE_MEM_SIZE_BITS */
 
 #endif /* !CONFIG_DISCONTIGMEM */
-
-/*
- * For BIO.  "will die".  Kill me when bio_to_phys() and bvec_to_phys() die.
- */
-#define page_to_phys(page)	(page_to_pfn(page) << PAGE_SHIFT)
 
 /*
  * Optional coherency support.  Currently used only by selected

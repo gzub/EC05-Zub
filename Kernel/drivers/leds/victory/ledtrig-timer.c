@@ -23,7 +23,7 @@
 #include <linux/ctype.h>
 #include <linux/leds.h>
 #include <linux/wakelock.h>	// hanapark_DF25
-
+#include <linux/slab.h>
 #include "../leds.h"
 
 #define BLINK_TIMES		5	// hanapark_DF25

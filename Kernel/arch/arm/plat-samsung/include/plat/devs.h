@@ -75,6 +75,13 @@ extern struct platform_device s3c_device_keypad;
 
 extern struct platform_device s3c_device_spi0;
 extern struct platform_device s3c_device_spi1;
+extern struct platform_device s5pc100_device_spi0;
+extern struct platform_device s5pc100_device_spi1;
+extern struct platform_device s5pc100_device_spi2;
+extern struct platform_device s5pv210_device_spi0;
+extern struct platform_device s5pv210_device_spi1;
+extern struct platform_device s5p6440_device_spi0;
+extern struct platform_device s5p6440_device_spi1;
 
 extern struct platform_device s3c_device_hwmon;
 
@@ -86,6 +93,35 @@ extern struct platform_device s3c_device_usbgadget;
 extern struct platform_device s3c_device_android_usb;
 extern struct platform_device s3c_device_usb_mass_storage;
 extern struct platform_device s3c_device_usb_hsotg;
+extern struct platform_device s5pv210_device_ac97;
+extern struct platform_device s5pv210_device_pcm0;
+extern struct platform_device s5pv210_device_pcm1;
+extern struct platform_device s5pv210_device_pcm2;
+extern struct platform_device s5pv210_device_iis0;
+extern struct platform_device s5pv210_device_iis1;
+extern struct platform_device s5pv210_device_iis2;
+
+extern struct platform_device s5p6442_device_pcm0;
+extern struct platform_device s5p6442_device_pcm1;
+extern struct platform_device s5p6442_device_iis0;
+extern struct platform_device s5p6442_device_iis1;
+extern struct platform_device s5p6442_device_spi;
+
+extern struct platform_device s5p6440_device_pcm;
+extern struct platform_device s5p6440_device_iis;
+
+extern struct platform_device s5pc100_device_ac97;
+extern struct platform_device s5pc100_device_pcm0;
+extern struct platform_device s5pc100_device_pcm1;
+extern struct platform_device s5pc100_device_iis0;
+extern struct platform_device s5pc100_device_iis1;
+extern struct platform_device s5pc100_device_iis2;
+
+extern struct platform_device samsung_device_keypad;
+
+extern struct platform_device s5p_device_fimc0;
+extern struct platform_device s5p_device_fimc1;
+extern struct platform_device s5p_device_fimc2;
 
 /* s3c2440 specific devices */
 

@@ -21,6 +21,7 @@
 #include <linux/irq.h>
 //#include <linux/irqreturn.h>
 #include <linux/io.h>
+#include <linux/slab.h>
 #include <mach/hardware.h>
 #include <asm/delay.h>
 #include <asm/irq.h>

@@ -1,6 +1,6 @@
 #include <linux/delay.h>
 #include <linux/i2c.h>
-
+#include <linux/slab.h>
 /* Slave address */
 #define MAX17040_SLAVE_ADDR	0x6D
 

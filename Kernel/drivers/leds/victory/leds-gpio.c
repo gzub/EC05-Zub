@@ -14,6 +14,7 @@
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/workqueue.h>
+#include <linux/slab.h>
 
 #include <asm/gpio.h>
 

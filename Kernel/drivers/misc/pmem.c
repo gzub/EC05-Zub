@@ -1,4 +1,4 @@
-/* drivers/misc/pmem.c
+/* drivers/android/pmem.c
  *
  * Copyright (C) 2007 Google, Inc.
  *
@@ -594,8 +594,7 @@ static int pmem_mmap(struct file *file, struct vm_area_struct *vma)
 	down_write(&data->sem);
 	/* check this file isn't already mmaped, for submaps check this file
 	 * has never been mmaped */
-	if ((data->flags & PMEM_FLAGS_MASTERMAP) ||
-	    (data->flags & PMEM_FLAGS_SUBMAP) ||
+	if ((data->flags & PMEM_FLAGS_SUBMAP) ||
 	    (data->flags & PMEM_FLAGS_UNSUBMAP)) {
 #if PMEM_DEBUG
 		printk(KERN_ERR "pmem: you can only mmap a pmem file once, "
@@ -1158,19 +1157,6 @@ static long pmem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			flush_pmem_file(file, region.offset, region.len);
 			break;
 		}
-#if 1
-	// added by jamie (2009.10.20)
-	// to provide cache invalidate function
-	case PMEM_CACHE_INV:
-		{
-			struct pmem_region region;
-			if (copy_from_user(&region, (void __user *)arg, sizeof(struct pmem_region)))
-				return -EFAULT;
-			dmac_inv_range((region.offset)&PAGE_MASK, PAGE_ALIGN(region.offset+region.len));
-			return  0;
-		}
-		break;
-#endif
 	default:
 		if (pmem[id].ioctl)
 			return pmem[id].ioctl(file, cmd, arg);
