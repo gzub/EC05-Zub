@@ -70,7 +70,8 @@ BUILD_KERNEL()
 
 	export KDIR=`pwd`
 
-	make ARCH=arm victory_03_defconfig
+	make ARCH=arm ec05-zub_defconfig
+	# make ARCH=arm victory_03_defconfig
 
 	# make kernel
 

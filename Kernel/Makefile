@@ -328,7 +328,6 @@ MODFLAGS	= -DMODULE
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
-//CFLAGS_KERNEL	=  -O2 -pipe -mcpu=cortex-a8 -mtune=cortex-a8 -mfloat-abi=thusoft -mfpu=neon 
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
@@ -352,6 +351,13 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfloat-abi=softfp \
 		   -mtune=cortex-a8 \
 		   -mfpu=neon
+		   -fno-gcse \
+	 	   -fprefetch-loop-arrays \
+                   --param l2-cache-size=512 \
+                   --param l1-cache-size=64 \
+                   --param simultaneous-prefetches=6 \
+                   --param prefetch-latency=400 \
+                   --param l1-cache-line-size=64
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
